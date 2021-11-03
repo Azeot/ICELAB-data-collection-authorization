@@ -1,9 +1,11 @@
 local-rabbitmq:
 	docker run -it --rm \
 		--name rabbitmq-dev \
+		--hostname rabbitmq-dev \
 		-p 172.17.0.1:5672:5672 \
 		-p 172.17.0.1:15672:15672 \
-		-v ${PWD}/local/rabbitmq:/etc/rabbitmq/:ro \
+		-v ${PWD}/local/rabbitmq-conf:/etc/rabbitmq/:ro \
+		-v ${PWD}/local/rabbitmq:/var/lib/rabbitmq \
 		rabbitmq:3.9-management
 
 # Ok avere password qua, tanto in ansible arriverà da vault

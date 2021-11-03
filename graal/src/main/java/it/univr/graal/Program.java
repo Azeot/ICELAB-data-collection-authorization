@@ -12,7 +12,9 @@ public class Program {
 
     public static void main(String[] argv) throws Exception {
         final var factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost("172.17.0.1");
+        factory.setUsername("black_knight");
+        factory.setPassword("scratch");
         final var connection = factory.newConnection();
         final var channel = connection.createChannel();
 
