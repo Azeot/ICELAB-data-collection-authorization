@@ -15,7 +15,9 @@ public class Program {
     public static void main(String[] args) throws IOException, TimeoutException {
         final var message = Stream.of(args).findFirst().orElse("Some message");
         final var factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost("172.17.0.1");
+        factory.setUsername("IDontMatter");
+        factory.setPassword("asd");
         try (final var connection = factory.newConnection(); final var channel = connection.createChannel()) {
             channel.queueDeclare(QUEUE_NAME, false, false, false, null);
             channel.basicPublish("", QUEUE_NAME, null, message.getBytes());

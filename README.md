@@ -3,9 +3,11 @@
 ## DONE
 
 - Local provisioning of containers with:
-  - RabbitMq with OAuth2 plugin enabled;
-  - Keycloak;
+  - RabbitMq with OAuth2 plugin enabled, data and conf persisted locally;
+    - Username and password for receiver client with internal auth;
+  - Keycloak and realm;
   - Postgresql db for Keycloak, with data persisted locally.
+- Receiver client and sender client stubs in Java;
 
 ## TODO
 
@@ -14,8 +16,8 @@
   2. See that messages without proper tokens get rejected;
   3. Make the client obtain tokens when sending.
 
-
 ## NOTES
+
 - First time running
   - must create a new realm on keycloak. 'dc' for Data Collection was used.
   - if rabbitmq is exposed on 172.17.0.1, default username and password (guest/guest) are not usable. Must create new user/pwd for receiver client.
