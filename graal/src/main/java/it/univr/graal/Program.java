@@ -8,11 +8,12 @@ import java.nio.charset.StandardCharsets;
 
 public class Program {
     final static Logger logger = LoggerFactory.getLogger(Program.class);
-    private final static String QUEUE_NAME = "hello";
+    private final static String QUEUE_NAME = "thequeue";
 
     public static void main(String[] argv) throws Exception {
         final var factory = new ConnectionFactory();
         factory.setHost("172.17.0.1");
+        factory.setVirtualHost("rpcmsg");
         factory.setUsername("black_knight");
         factory.setPassword("scratch");
         final var connection = factory.newConnection();
