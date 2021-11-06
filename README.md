@@ -107,10 +107,10 @@ Il supporto per OAuth2 in RabbitMQ viene dato da un [plug-in](https://github.com
 
 Messaggi provenienti da un publisher sono indirizzati su exchange facenti parte di un virtual host (VHost), che a loro volta accodano i messaggi su una o più code, su cui sono in ascolto dei consumer.
 
-Per poter indirizzare un messaggio su un determinato exchange, un client deve presentare a RabbitMQ un token con uno scope costruito nel modo seguente:
+Per poter indirizzare un messaggio su un determinato exchange, un client deve presentare a RabbitMQ un token contenente uno scope costruito nel modo seguente:
 
 ```text
-<permission>:<vhost_pattern>/<name_pattern>
+RESOURCE_SERVER_ID.<permission>:<vhost_pattern>/<name_pattern>
 ```
 
 Dove:
@@ -118,9 +118,10 @@ Dove:
 - ```<permission>``` definisce il tipo di accesso (```configure```, ```read```, o ```write```);
 - ```<vhost_pattern>``` è una pattern per i VHost a cui il token da accesso;
 - ```<name_pattern>``` è una pattern per gli exchange a cui il token da accesso;
+- ```RESOURCE_SERVER_ID``` da modo di suddividere logicamente gli scope in maniera ortogonale alla suddivisone per VHost.
 
-Viene inoltre introdotto un identificativo, ```RESOURCE_SERVER_ID```, per dare modo di suddividere logicamente gli scope in maniera ortogonale alla suddivisone per VHost.
+Il token contente gli scope è un JWT firmato con chiave asimmetrica. Per verificarlo, RabbitMQ può ottenere il JWKSet direttamente dalla REST API del authorization server. 
 
-Il token contente gli scope è un JWT firmato con chiave asimmetrica.  L'API di RabbitMQ non è nativamente pensata con il supporto per OAuth2, pertanto il token viene passato dal publisher a RabbitMQ al momento di apertura della connessione, tramite il campo solitamente riservato alla password utente (il nome utente viene ignorato).
+L'API di RabbitMQ non è nativamente pensata con il supporto per OAuth2, pertanto il token viene passato dal publisher a RabbitMQ al momento di apertura della connessione, tramite il campo solitamente riservato alla password utente (il nome utente viene ignorato).
 
 RabbitMQ verifica il time to live del token per determinare se esso sia scaduto, sia al momento di apertura della connessione, _sia al momento della pubblicazione di un messaggio_.
