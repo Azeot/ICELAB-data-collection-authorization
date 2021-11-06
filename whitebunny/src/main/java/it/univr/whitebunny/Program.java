@@ -1,29 +1,78 @@
 package it.univr.whitebunny;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 
 public class Program {
     final static Logger logger = LoggerFactory.getLogger(Program.class);
-    private final static String QUEUE_NAME = "thequeue";
 
-    public static void main(String[] args) throws IOException, TimeoutException {
-        final var message = Stream.of(args).findFirst().orElse("Some message");
+    private final static String QUEUE_NAME = "thequeue";
+    private final static String CLIENT_ID = "whitebunny";
+    private final static String OAUTH_IP = "172.17.0.1";
+    private final static int OAUTH_PORT = 8081;
+    private final static String REALM = "dc";
+    private final static String QUEUE_IP = "172.17.0.1";
+    private final static String VHOST = "rpcmsg";
+
+
+    public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
+        final var arguments = List.of(args);
+
+        final var objectMapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        final var clientSecret = arguments.stream().findFirst().orElseThrow(() -> new IllegalArgumentException("Missing client secret argument"));
+        final var credentials = String.format("%s:%s", CLIENT_ID, clientSecret);
+        final var encodedCredentials = new String(Base64.getMimeEncoder().encode(credentials.getBytes(StandardCharsets.UTF_8)));
+        final var client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        final var request = HttpRequest.newBuilder()
+                .uri(URI.create(String.format("http://%s:%d/auth/realms/%s/protocol/openid-connect/token", OAUTH_IP, OAUTH_PORT, REALM)))
+                .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials", StandardCharsets.UTF_8))
+                .header("Accept", "application/json;charset=UTF-8")
+                .header("Content-Type", " application/x-www-form-urlencoded;charset=UTF-8")
+                .header("Authorization", String.format("Basic %s", encodedCredentials))
+                .build();
+
+        final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (400 <= response.statusCode()) {
+            throw new IllegalArgumentException(response.body());
+        }
+
+        final var oathResp = objectMapper.readValue(response.body(), OathResp.class);
+
+        final var message = arguments.stream().skip(1).findFirst().orElse("Some default message");
         final var factory = new ConnectionFactory();
-        factory.setHost("172.17.0.1");
-        factory.setVirtualHost("rpcmsg");
-        factory.setUsername("IDontMatter");
-        factory.setPassword("eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJtdDAyRXY1T3NRdUR2RnhHLVZydlpOXzloSGVZNHlydXhCNDNlU0xHQ0NJIn0.eyJleHAiOjE2MzU5NzY1OTAsImlhdCI6MTYzNTk3NjI5MCwianRpIjoiMWY3NzY4ZDYtMjE2MS00OTE4LWI5NzYtOTdkM2Q0MDM0OGRhIiwiaXNzIjoiaHR0cDovLzE3Mi4xNy4wLjE6ODA4MS9hdXRoL3JlYWxtcy9kYyIsImF1ZCI6ImFydGh1ciIsInN1YiI6IjRhMmZiNDFmLTM0NTUtNGQ1MC1hZjY4LTJmNThmNjM4YThlZCIsInR5cCI6IkJlYXJlciIsImF6cCI6IndoaXRlYnVubnkiLCJhY3IiOiIxIiwic2NvcGUiOiJhcnRodXIuY29uZmlndXJlOnJwY21zZy8qIGFydGh1ci53cml0ZTpycGNtc2cvKiIsImNsaWVudElkIjoid2hpdGVidW5ueSIsImNsaWVudEhvc3QiOiIxNzIuMTcuMC4xIiwiY2xpZW50QWRkcmVzcyI6IjE3Mi4xNy4wLjEifQ.Axz80zhBjt6epMz7L86cmSsxa_LEI9usiRcl4sbXgeQXrsTwP4VusD_l_2r2-HIVLGe4QBgk6CqVHFTzeUC03kH3iuE9XM9gllX6rARkBP1GsDmluzxMM_QUJyxAIfgmWcm0XMKFucX7D0zkRo9x9O00FH0PzzDQlcqxFqSdHEG7vJB8txWz4sQ3tpb5kMJXtd0XDS4g2iY7FJQEUxVf3XMJ-G_3Ck2TpHRVYeBb3ZgdPYSfr_y1_HOXo5IXN0brR3avk3rcJkj6TPcfBJcewkQCynLzVg7rg2JNxVtpcnomyx3-N7OJc1qkVmWpo1gy8-6iGctWHeCON6fOP_AVfw");
+        factory.setHost(QUEUE_IP);
+        factory.setVirtualHost(VHOST);
+        factory.setUsername("");
+        factory.setPassword(oathResp.accessToken);
         try (final var connection = factory.newConnection();
              final var channel = connection.createChannel()) {
             channel.queueDeclare(QUEUE_NAME, false, false, false, null);
             channel.basicPublish("", QUEUE_NAME, null, message.getBytes());
             logger.info("Sent '{}'", message);
         }
+    }
+
+    private static class OathResp {
+        @JsonProperty("access_token")
+        public String accessToken;
     }
 }

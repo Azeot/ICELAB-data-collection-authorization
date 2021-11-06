@@ -30,4 +30,4 @@
       - rabbitmqctl add_vhost <vhName>
     - rabbitmqctl add_user <username> <password>
     - rabbitmqctl set_permissions -p "vhName" "username" ".*" ".*" ".*"
-    - --hostname and volume on /var/lib/rabbitmq are necessary to persist configuration across restarts.
+- --hostname and volume on /var/lib/rabbitmq are necessary to persist configuration across restarts.
