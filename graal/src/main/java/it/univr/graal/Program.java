@@ -1,6 +1,5 @@
 package it.univr.graal;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

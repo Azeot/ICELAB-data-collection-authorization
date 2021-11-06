@@ -32,7 +32,7 @@ public class Program {
 
     public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
         final var arguments = List.of(args);
-        final var clientSecret = arguments.stream().findFirst().orElseThrow(() -> new IllegalArgumentException("Missing client secret argument"));
+        final var clientSecret = arguments.stream().findFirst().orElseThrow(() -> new IllegalArgumentException("Missing oauth client secret as first argument"));
         final String accessToken = getAccessToken(clientSecret);
 
         final var message = arguments.stream().skip(1).findFirst().orElse("Some default message");
