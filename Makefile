@@ -1,3 +1,6 @@
+build-all:
+	mvn clean package
+
 local-rabbitmq:
 	docker run -it --rm \
 		--name rabbitmq-dev \
@@ -8,9 +11,6 @@ local-rabbitmq:
 		-v ${PWD}/local/rabbitmq:/var/lib/rabbitmq \
 		rabbitmq:3.9-management
 
-# Ok avere password qua, tanto in ansible arriverà da vault
-# Setto la cartella data in modo da ritrovarmi i dati fra restart
-# Metto script iniziali in /docker-entrypoint-initdb.d/ che girano se in data non c'è già qualcosa
 local-db:
 	docker run -it --rm \
 		--name postgres-dev \
@@ -20,7 +20,6 @@ local-db:
 		-v ${PWD}/local/postgres:/var/lib/postgresql/data \
 		postgres:bullseye
 
-# Da vault su ansible saranno: database_user e password, admin_user e password
 local-keycloak:
 	docker run --rm -it \
 		--name keycloak-dev \

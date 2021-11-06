@@ -20,6 +20,8 @@ import java.util.concurrent.TimeoutException;
 public class Program {
     final static Logger logger = LoggerFactory.getLogger(Program.class);
 
+    private final static boolean DELAY_PUBLICATION = false; //To test whether a msg is published after the access token ttl has expired
+
     private final static String OAUTH_CLIENT_ID = "whitebunny";
     private final static String OAUTH_IP = "172.17.0.1";
     private final static int OAUTH_PORT = 8081;
@@ -29,27 +31,29 @@ public class Program {
     private final static String QUEUE_IP = "172.17.0.1";
     private final static String VHOST = "rpcmsg";
 
-
-    public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
-        final var arguments = List.of(args);
+    public static void main(String[] argv) throws IOException, TimeoutException, InterruptedException {
+        final var arguments = List.of(argv);
         final var clientSecret = arguments.stream().findFirst().orElseThrow(() -> new IllegalArgumentException("Missing oauth client secret as first argument"));
-        final String accessToken = getAccessToken(clientSecret);
+        final var oauthResponse = getOauthResponse(clientSecret);
 
         final var message = arguments.stream().skip(1).findFirst().orElse("Some default message");
         final var factory = new ConnectionFactory();
         factory.setHost(QUEUE_IP);
         factory.setVirtualHost(VHOST);
         factory.setUsername("");
-        factory.setPassword(accessToken);
+        factory.setPassword(oauthResponse.accessToken);
         try (final var connection = factory.newConnection();
              final var channel = connection.createChannel()) {
             channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
+            if (DELAY_PUBLICATION) {
+                Thread.sleep((oauthResponse.ttl + 1) * 1000L);
+            }
             channel.basicPublish(EXCHANGE_NAME, "", null, message.getBytes(StandardCharsets.UTF_8));
             logger.info("Sent '{}'", message);
         }
     }
 
-    private static String getAccessToken(String clientSecret) throws IOException, InterruptedException {
+    private static OauthResponse getOauthResponse(String clientSecret) throws IOException, InterruptedException {
         final var credentials = String.format("%s:%s", OAUTH_CLIENT_ID, clientSecret);
         final var encodedCredentials = new String(Base64.getMimeEncoder().encode(credentials.getBytes(StandardCharsets.UTF_8)));
         final var client = HttpClient.newBuilder()
@@ -70,11 +74,13 @@ public class Program {
         final var objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         final var oathResponse = objectMapper.readValue(response.body(), OauthResponse.class);
-        return oathResponse.accessToken;
+        return oathResponse;
     }
 
     private static class OauthResponse {
         @JsonProperty("access_token")
         public String accessToken;
+        @JsonProperty("expires_in")
+        public int ttl;
     }
 }
