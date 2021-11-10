@@ -24,7 +24,7 @@ Trattandosi di una comunicazione machine-to-machine (M2M), si è scelto d'implem
 - Il client è l'automation controller;
 - L'authorization server è un'istanza di [Keycloak](https://www.keycloak.org/) che persiste i dati in un database [PostgreSQL](https://www.postgresql.org/).
 
-## OAuth2 in RabbitMQ
+### OAuth2 in RabbitMQ
 
 Il supporto per OAuth2 in RabbitMQ viene dato da un [plug-in](https://github.com/rabbitmq/rabbitmq-server/tree/master/deps/rabbitmq_auth_backend_oauth2).
 
@@ -43,11 +43,18 @@ Dove:
 - ```<name_pattern>``` è una pattern per gli exchange a cui il token da accesso;
 - ```RESOURCE_SERVER_ID``` da modo di suddividere logicamente gli scope in maniera ortogonale alla suddivisone per VHost.
 
-Il token contente gli scope è un JWT firmato con chiave asimmetrica. Per verificare la firma, RabbitMQ può ottenere il JWKSet direttamente dalla REST API di Keycloak.
+Il token contente gli scope è un JWT firmato con chiave asimmetrica. Per verificare la firma, RabbitMQ può ottenere il JWK set direttamente dalla REST API di Keycloak.
 
 L'API di RabbitMQ non è nativamente pensata con il supporto per OAuth2, pertanto il token viene passato dal publisher a RabbitMQ al momento di apertura della connessione, tramite il campo solitamente riservato alla password utente (il nome utente viene ignorato).
 
 RabbitMQ verifica il time to live del token per determinare se esso sia scaduto, sia al momento di apertura della connessione, _sia al momento della pubblicazione di un messaggio_.
+
+### Cosa fa
+
+- __Graal__: Applicativo Java che fa le veci del OPC UA Client. Si autentica su RabbitMQ usando delle credenziali utente. Dichiara un exchange con nome e ci fa il bind di una coda. Rimane in ascolto sulla coda per l'arrivo di eventuali messaggi, che riporta su stdout.
+- __Whitebunny__: Applicativo Java che fa le veci del Automation Controller. Contatta Keycloak per ottenere un access token, che usa per stabilire una connessione all'exchange creato da Graal e pubblicarci un messaggio.
+- __RabbitMQ__: Quando riceve una richiesta di connessione, prima prova a verificare la presenza di un access token nel campo password; come fallback, tenta di eseguire l'autenticazione con credenziali utente. Se riconosce un access token, contatta Keycloak per ottenere il JWK set e verificarlo.
+- __Keycloak__: Stacca access token a Whitebunny ed espone un endpoint per il recupero del JWK set.
 
 ## Utilizzo
 
