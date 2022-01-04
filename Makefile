@@ -31,3 +31,18 @@ local-keycloak:
 		-e KEYCLOAK_ADMIN_USER=admin \
 		-e KEYCLOAK_ADMIN_PASSWORD=admin \
 		bitnami/keycloak:15.0.2-debian-10-r72
+
+k8s-rabbitmq:
+	minikube kubectl -- apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
+	minikube kubectl -- -n rabbitmq-system apply -f ${PWD}/k8s/rabbitmq-test-deploy.yml
+
+remove-k8s-rabbitmq:
+	minikube kubectl -- -n rabbitmq-system delete -f ${PWD}/k8s/rabbitmq-test-deploy.yml
+	minikube kubectl -- delete -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
+
+view-k8s-deployment:
+	minikube kubectl -- get all -n rabbitmq-system -l app.kubernetes.io/name=rabbitmq-idca-deployment
+
+minikube:
+	minikube start
+	minikube dashboard

@@ -1,0 +1,33 @@
+minikube start
+
+Per creare configmaps da file di config:
+
+kubectl create configmap <nome> --from-file=<pathToFile>
+
+Per vedere il contenuto della configmap
+
+kubectl describe cm <nome>
+
+-----------------
+
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: definition
+
+THis is the part required ofr rabbitmq, everything else is configuration
+https://www.rabbitmq.com/kubernetes/operator/using-operator.html#create
+
+kubectl get deployment -n <namespace> (rabbitmq-system)
+
+see everything: 
+   kubectl get all -n rabbitmq-system -l app.kubernetes.io/name=rabbitmq-idca-deployment
+
+get into the pod:
+  kubectl -n rabbitmq-system exec --stdin --tty pod/rabbitmq-idca-deployment-server-0 -- /bin/bash
+
+to see enabled plugins
+  rabbitmq-plugins list 
+
+create configmap for deifnitions
+minikube kubectl -- create configmap definitions --from-file='def.json=k8s/definitions.json'

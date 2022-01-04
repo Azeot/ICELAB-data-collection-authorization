@@ -1,0 +1,25 @@
+{
+  "users": [
+    {
+      "name": "brian",
+      "password_hash": "TeBGw6BCieo97PTyksclemDFBzQiePhKj/b5Z9dexpXHzuRh",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator",
+      "limits": {}
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "rpcmsg"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "brian",
+      "vhost": "rpcmsg",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ]
+}
