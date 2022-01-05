@@ -34,15 +34,38 @@ local-keycloak:
 
 k8s-rabbitmq:
 	minikube kubectl -- apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
-	minikube kubectl -- -n rabbitmq-system apply -f ${PWD}/k8s/rabbitmq-test-deploy.yml
+	minikube kubectl -- -n rabbitmq-system apply -f ${PWD}/k8s/rabbitmq.yml
 
 remove-k8s-rabbitmq:
-	minikube kubectl -- -n rabbitmq-system delete -f ${PWD}/k8s/rabbitmq-test-deploy.yml
+	minikube kubectl -- -n rabbitmq-system delete -f ${PWD}/k8s/rabbitmq.yml
 	minikube kubectl -- delete -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
 
-view-k8s-deployment:
-	minikube kubectl -- get all -n rabbitmq-system -l app.kubernetes.io/name=rabbitmq-idca-deployment
+view-k8s-rabbitmq:
+	@echo "Username:   				$$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.username}" | base64 --decode)"
+	@echo "Password:  				$$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.password}" | base64 --decode)"
+	@echo "Rabbitmq:				rabbitmq-management.$$(minikube ip).nip.io"
+	@echo ""
+	@minikube kubectl -- get all -n rabbitmq-system
 
 minikube:
 	minikube start
 	minikube dashboard
+
+k8s-db:
+	minikube kubectl -- apply -f ${PWD}/k8s/postgres.yml
+
+k8s-keycloak:
+	minikube kubectl -- apply -f ${PWD}/k8s/keycloak.yml
+
+remove-k8s-db:
+	minikube kubectl -- -n auth delete -f ${PWD}/k8s/postgres.yml
+
+remove-k8s-keycloak:
+	minikube kubectl -- -n auth delete -f ${PWD}/k8s/keycloak.yml
+
+view-k8s-keycloak:
+	@echo "Keycloak:                 https://keycloak.$$(minikube ip).nip.io/auth" 
+	@echo "Keycloak Admin Console:   https://keycloak.$$(minikube ip).nip.io/auth/admin" 
+	@echo "Keycloak Account Console: https://keycloak.$$(minikube ip).nip.io/auth/realms/myrealm/account"
+	@echo ""
+	@minikube kubectl -- get all -n auth

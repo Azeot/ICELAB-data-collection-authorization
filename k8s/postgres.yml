@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-volume
+  namespace: auth
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/var/lib/postgresql/data"
+  persistentVolumeReclaimPolicy: Retain
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-volume-claim
+  namespace: auth
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-database
+  namespace: auth
+  labels:
+    app: postgres-database
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres-database
+  template:
+    metadata:
+      labels:
+        app: postgres-database
+    spec:
+      containers:
+      - name: postgres-database
+        env:
+        - name: POSTGRES_DB
+          value: "keycloak"
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        - name: POSTGRES_USER
+          value: "postgres"
+        image: postgres
+        ports:
+        - containerPort: 5431
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-storage
+      restartPolicy: Always
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-volume-claim
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-keycloak
+  namespace: auth
+  labels:
+    app: postgres-database
+spec:
+  ports:
+    - name: postgres-keycloak
+      port: 5431
+      targetPort: 5431
+  selector:
+    app: postgres-database
+status:
+  loadBalancer: {}
