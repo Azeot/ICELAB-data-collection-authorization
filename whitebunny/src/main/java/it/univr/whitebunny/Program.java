@@ -23,25 +23,28 @@ public class Program {
     private final static boolean DELAY_PUBLICATION = false; //To test whether a msg is published after the access token ttl has expired
 
     private final static String OAUTH_CLIENT_ID = "whitebunny";
-    private final static String OAUTH_IP = "172.17.0.1";
-    private final static int OAUTH_PORT = 8081;
     private final static String REALM = "dc";
 
     private final static String EXCHANGE_NAME = "opcua";
-    private final static String QUEUE_IP = "172.17.0.1";
     private final static String VHOST = "rpcmsg";
 
     public static void main(String[] argv) throws IOException, TimeoutException, InterruptedException {
         final var arguments = List.of(argv);
-        final var clientSecret = arguments.stream().findFirst().orElseThrow(() -> new IllegalArgumentException("Missing oauth client secret as first argument"));
-        final var oauthResponse = getOauthResponse(clientSecret);
-
-        final var message = arguments.stream().skip(1).findFirst().orElse("Some default message");
+        final var rabbitmqHostPort = arguments.stream().findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Missing RabbitMQ host:port as first argument"))
+                .split(":");
+        var keycloakHostPort = arguments.stream().skip(1).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Missing Keycloak host:port as second argument"))
+                .split(":");
+        final var clientSecret = arguments.stream().skip(2).findFirst().orElseThrow(() -> new IllegalArgumentException("Missing oauth client secret as third argument"));
+        final var oauthResponse = getOauthResponse(clientSecret, keycloakHostPort[0], Integer.parseInt(keycloakHostPort[1]));
+        final var message = arguments.stream().skip(3).findFirst().orElse("Some default message");
         final var factory = new ConnectionFactory();
-        factory.setHost(QUEUE_IP);
+        factory.setHost(rabbitmqHostPort[0]);
         factory.setVirtualHost(VHOST);
         factory.setUsername("");
         factory.setPassword(oauthResponse.accessToken);
+        factory.setPort(Integer.parseInt(rabbitmqHostPort[1]));
         try (final var connection = factory.newConnection();
              final var channel = connection.createChannel()) {
             channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
@@ -53,14 +56,15 @@ public class Program {
         }
     }
 
-    private static OauthResponse getOauthResponse(String clientSecret) throws IOException, InterruptedException {
+    private static OauthResponse getOauthResponse(String clientSecret, String host, int port) throws IOException, InterruptedException {
+        logger.info("Requesting access token at http://{}:{}/auth/realms/{}/protocol/openid-connect/token", host, port, REALM);
         final var credentials = String.format("%s:%s", OAUTH_CLIENT_ID, clientSecret);
         final var encodedCredentials = new String(Base64.getMimeEncoder().encode(credentials.getBytes(StandardCharsets.UTF_8)));
         final var client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
         final var request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d/auth/realms/%s/protocol/openid-connect/token", OAUTH_IP, OAUTH_PORT, REALM)))
+                .uri(URI.create(String.format("http://%s:%d/auth/realms/%s/protocol/openid-connect/token", host, port, REALM)))
                 .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials", StandardCharsets.UTF_8))
                 .header("Accept", "application/json;charset=UTF-8")
                 .header("Content-Type", " application/x-www-form-urlencoded;charset=UTF-8")
@@ -74,6 +78,7 @@ public class Program {
         final var objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         final var oathResponse = objectMapper.readValue(response.body(), OauthResponse.class);
+        logger.trace(oathResponse.toString());
         return oathResponse;
     }
 
@@ -82,5 +87,13 @@ public class Program {
         public String accessToken;
         @JsonProperty("expires_in")
         public int ttl;
+
+        @Override
+        public String toString() {
+            return "OauthResponse{" +
+                    "accessToken='" + accessToken + '\'' +
+                    ", ttl=" + ttl +
+                    '}';
+        }
     }
 }

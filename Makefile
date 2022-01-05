@@ -41,9 +41,10 @@ remove-k8s-rabbitmq:
 	minikube kubectl -- delete -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
 
 view-k8s-rabbitmq:
-	@echo "Username:   				$$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.username}" | base64 --decode)"
-	@echo "Password:  				$$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.password}" | base64 --decode)"
-	@echo "Rabbitmq:				rabbitmq-management.$$(minikube ip).nip.io"
+	@echo "Username: $$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.username}" | base64 --decode)"
+	@echo "Password: $$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.password}" | base64 --decode)"
+	@echo "Rabbitmq: $$(minikube service --url icerabbitmq -n rabbitmq-system | head -n 1)"
+	@echo "Rabbitmq management: http://rabbitmq-management.$$(minikube ip).nip.io"
 	@echo ""
 	@minikube kubectl -- get all -n rabbitmq-system
 
@@ -64,8 +65,8 @@ remove-k8s-keycloak:
 	minikube kubectl -- -n auth delete -f ${PWD}/k8s/keycloak.yml
 
 view-k8s-keycloak:
-	@echo "Keycloak:                 https://keycloak.$$(minikube ip).nip.io/auth" 
-	@echo "Keycloak Admin Console:   https://keycloak.$$(minikube ip).nip.io/auth/admin" 
-	@echo "Keycloak Account Console: https://keycloak.$$(minikube ip).nip.io/auth/realms/myrealm/account"
+	@echo "Keycloak:                 http://keycloak.$$(minikube ip).nip.io/auth" 
+	@echo "Keycloak Admin Console:   http://keycloak.$$(minikube ip).nip.io/auth/admin" 
+	@echo "Keycloak Account Console: http://keycloak.$$(minikube ip).nip.io/auth/realms/myrealm/account"
 	@echo ""
 	@minikube kubectl -- get all -n auth
