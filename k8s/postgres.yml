@@ -11,13 +11,13 @@ metadata:
   labels:
     type: local
 spec:
+  storageClassName: standard
   capacity:
-    storage: 1Gi
+    storage: 2Gi
   accessModes:
     - ReadWriteOnce
   hostPath:
     path: "/var/lib/postgresql/data"
-  persistentVolumeReclaimPolicy: Retain
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -25,12 +25,13 @@ metadata:
   name: postgres-volume-claim
   namespace: auth
 spec:
+  storageClassName: standard
+  volumeName: postgres-volume
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-status: {}
 ---
 apiVersion: apps/v1
 kind: Deployment

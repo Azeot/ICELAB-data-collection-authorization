@@ -19,7 +19,7 @@ spec:
     additionalConfig: |
       auth_backends.1 = rabbit_auth_backend_oauth2
       auth_backends.2 = internal
-      log.file.level = info
+      log.file.level = debug
     advancedConfig: |
       [
         {rabbitmq_auth_backend_oauth2, [

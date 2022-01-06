@@ -1,99 +1,16 @@
 package it.univr.whitebunny;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rabbitmq.client.ConnectionFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 public class Program {
-    final static Logger logger = LoggerFactory.getLogger(Program.class);
-
-    private final static boolean DELAY_PUBLICATION = false; //To test whether a msg is published after the access token ttl has expired
-
-    private final static String OAUTH_CLIENT_ID = "whitebunny";
-    private final static String REALM = "dc";
-
-    private final static String EXCHANGE_NAME = "opcua";
-    private final static String VHOST = "rpcmsg";
-
-    public static void main(String[] argv) throws IOException, TimeoutException, InterruptedException {
-        final var arguments = List.of(argv);
-        final var rabbitmqHostPort = arguments.stream().findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Missing RabbitMQ host:port as first argument"))
-                .split(":");
-        var keycloakHostPort = arguments.stream().skip(1).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Missing Keycloak host:port as second argument"))
-                .split(":");
-        final var clientSecret = arguments.stream().skip(2).findFirst().orElseThrow(() -> new IllegalArgumentException("Missing oauth client secret as third argument"));
-        final var oauthResponse = getOauthResponse(clientSecret, keycloakHostPort[0], Integer.parseInt(keycloakHostPort[1]));
-        final var message = arguments.stream().skip(3).findFirst().orElse("Some default message");
-        final var factory = new ConnectionFactory();
-        factory.setHost(rabbitmqHostPort[0]);
-        factory.setVirtualHost(VHOST);
-        factory.setUsername("");
-        factory.setPassword(oauthResponse.accessToken);
-        factory.setPort(Integer.parseInt(rabbitmqHostPort[1]));
-        try (final var connection = factory.newConnection();
-             final var channel = connection.createChannel()) {
-            channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
-            if (DELAY_PUBLICATION) {
-                Thread.sleep((oauthResponse.ttl + 1) * 1000L);
-            }
-            channel.basicPublish(EXCHANGE_NAME, "", null, message.getBytes(StandardCharsets.UTF_8));
-            logger.info("Sent '{}'", message);
-        }
-    }
-
-    private static OauthResponse getOauthResponse(String clientSecret, String host, int port) throws IOException, InterruptedException {
-        logger.info("Requesting access token at http://{}:{}/auth/realms/{}/protocol/openid-connect/token", host, port, REALM);
-        final var credentials = String.format("%s:%s", OAUTH_CLIENT_ID, clientSecret);
-        final var encodedCredentials = new String(Base64.getMimeEncoder().encode(credentials.getBytes(StandardCharsets.UTF_8)));
-        final var client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .build();
-        final var request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d/auth/realms/%s/protocol/openid-connect/token", host, port, REALM)))
-                .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials", StandardCharsets.UTF_8))
-                .header("Accept", "application/json;charset=UTF-8")
-                .header("Content-Type", " application/x-www-form-urlencoded;charset=UTF-8")
-                .header("Authorization", String.format("Basic %s", encodedCredentials))
-                .build();
-
-        final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (400 <= response.statusCode()) {
-            throw new IllegalArgumentException(response.body());
-        }
-        final var objectMapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        final var oathResponse = objectMapper.readValue(response.body(), OauthResponse.class);
-        logger.trace(oathResponse.toString());
-        return oathResponse;
-    }
-
-    private static class OauthResponse {
-        @JsonProperty("access_token")
-        public String accessToken;
-        @JsonProperty("expires_in")
-        public int ttl;
-
-        @Override
-        public String toString() {
-            return "OauthResponse{" +
-                    "accessToken='" + accessToken + '\'' +
-                    ", ttl=" + ttl +
-                    '}';
-        }
+    public static void main(String[] argv) {
+        final var ctx = new AnnotationConfigApplicationContext(Config.class);
+        final var authClient = ctx.getBean(AuthClient.class);
+        final var rabbitmqClient = ctx.getBean(RabbitmqClient.class);
+        final var message = Stream.of(argv).findFirst().orElse("Hello world");
+        final var oauthResponse = authClient.getOauthResponse();
+        rabbitmqClient.publish(oauthResponse.accessToken, message);
     }
 }
