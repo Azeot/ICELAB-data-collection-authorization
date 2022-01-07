@@ -42,11 +42,17 @@ spec:
         - name: KEYCLOAK_DATABASE_USER
           value: "postgres"
         - name: KEYCLOAK_DATABASE_PASSWORD
-          value: "password"
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: db.password
         - name: KEYCLOAK_USER
           value: "admin"
         - name: KEYCLOAK_PASSWORD
-          value: "admin"
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: kyc.password
         - name: PROXY_ADDRESS_FORWARDING
           value: "true"
         ports:

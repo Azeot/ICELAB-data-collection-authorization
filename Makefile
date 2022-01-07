@@ -52,7 +52,9 @@ minikube:
 	minikube start
 	minikube dashboard
 
-k8s-db:
+k8s-db: k8s/auth_secret.yml
+	minikube kubectl -- apply -f ${PWD}/k8s/auth_namespace.yml
+	minikube kubectl -- apply -f ${PWD}/k8s/auth_secret.yml
 	minikube kubectl -- apply -f ${PWD}/k8s/postgres.yml
 
 k8s-keycloak:
