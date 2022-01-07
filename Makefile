@@ -59,16 +59,16 @@ k8s-db: k8s/auth_secret.yml
 
 k8s/auth_secret.yml:
 	@read -p "Enter DB password: " db_pwd;\
-   	read -p "Enter keycloak admin password: " kyc_pwd;\
+   	read -p "Enter Keycloak admin password: " kyc_pwd;\
 	echo "apiVersion: v1\n"\
 	"kind: Secret\n"\
-	"metadata:\n\t"\
-	"name: auth-secret\n\t"\
-	"namespace: auth\n"\
+	"metadata:\n"\
+	"  name: auth-secret\n"\
+	"  namespace: auth\n"\
 	"type: Opaque\n"\
-	"data:\n\t"\
-	"db.password: $$(echo $$db_pwd | base64 -)\n\t"\
-	"kyc.password: $$(echo $$kyc_pwd | base64 -)" > k8s/auth_secret.yml
+	"data:\n"\
+	"  db.password: $$(echo $$db_pwd | base64 -)\n"\
+	"  kyc.password: $$(echo $$kyc_pwd | base64 -)" > k8s/auth_secret.yml
 
 k8s-keycloak:
 	minikube kubectl -- apply -f ${PWD}/k8s/keycloak.yml
@@ -82,6 +82,5 @@ remove-k8s-keycloak:
 view-k8s-keycloak:
 	@echo "Keycloak:                 http://keycloak.$$(minikube ip).nip.io/auth" 
 	@echo "Keycloak Admin Console:   http://keycloak.$$(minikube ip).nip.io/auth/admin" 
-	@echo "Keycloak Account Console: http://keycloak.$$(minikube ip).nip.io/auth/realms/myrealm/account"
 	@echo ""
 	@minikube kubectl -- get all -n auth
