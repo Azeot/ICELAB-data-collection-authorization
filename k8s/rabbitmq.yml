@@ -4,6 +4,7 @@ metadata:
   name: icerabbitmq
   namespace: rabbitmq-system
 spec:
+  replicas: 1
   service:
     type: NodePort
   persistence:
@@ -25,7 +26,7 @@ spec:
         {rabbitmq_auth_backend_oauth2, [
           {resource_server_id, <<"arthur">>},
           {key_config, [
-            {jwks_url, <<"http://172.17.0.1:8081/auth/realms/dc/protocol/openid-connect/certs">>}
+            {jwks_url, <<"http://192.168.49.2:32315/auth/realms/dc/protocol/openid-connect/certs">>}
           ]}
         ]}
       ].
@@ -39,7 +40,7 @@ metadata:
   namespace: rabbitmq-system
 spec:
   rules:
-  - host: "rabbitmq-management.192.168.49.2.nip.io"
+  - host: rabbitmq-management.192.168.49.2.nip.io
     http:
       paths:
       - path: /
