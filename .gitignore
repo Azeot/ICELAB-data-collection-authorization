@@ -2,3 +2,5 @@
 **/target/
 local/postgres/
 local/rabbitmq/
+
+**/*secret.yml
