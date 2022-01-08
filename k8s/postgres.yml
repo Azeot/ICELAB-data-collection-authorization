@@ -52,13 +52,10 @@ spec:
         env:
         - name: POSTGRES_DB
           value: "keycloak"
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-              secretKeyRef:
-                  name: auth-secret
-                  key: db.password
         - name: POSTGRES_USER
-          value: "postgres"
+          value: "keycloak"
+        - name: POSTGRES_PASSWORD
+          value: "password"
         image: postgres:bullseye
         ports:
         - containerPort: 5431

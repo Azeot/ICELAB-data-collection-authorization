@@ -35,24 +35,20 @@ spec:
       - name: keycloak
         image: quay.io/keycloak/keycloak:16.1.0
         env:
-        - name: KEYCLOAK_DATABASE_HOST
+        - name: DB_ADDR
           value: postgres-keycloak
-        - name: KEYCLOAK_DATABASE_NAME
+        - name: DB_DATABASE
           value: "keycloak"
-        - name: KEYCLOAK_DATABASE_USER
-          value: "postgres"
-        - name: KEYCLOAK_DATABASE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: auth-secret
-              key: db.password
+        - name: DB_PASSWORD
+          value: "password"
+        - name: DB_USER
+          value: "keycloak"
+        - name: DB_VENDOR
+          value: POSTGRES
         - name: KEYCLOAK_USER
           value: "admin"
         - name: KEYCLOAK_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: auth-secret
-              key: kyc.password
+          value: "admin"
         - name: PROXY_ADDRESS_FORWARDING
           value: "true"
         ports:

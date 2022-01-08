@@ -24,9 +24,9 @@ spec:
     advancedConfig: |
       [
         {rabbitmq_auth_backend_oauth2, [
-          {resource_server_id, <<"arthur">>},
+          {resource_server_id, <<"%RES_SRV%">>},
           {key_config, [
-            {jwks_url, <<"http://192.168.49.2:32315/auth/realms/dc/protocol/openid-connect/certs">>}
+            {jwks_url, <<"http://%KEYCLOAK_IP%:%KEYCLOAK_PORT%/auth/realms/%REALM%/protocol/openid-connect/certs">>}
           ]}
         ]}
       ].
@@ -40,7 +40,7 @@ metadata:
   namespace: rabbitmq-system
 spec:
   rules:
-  - host: rabbitmq-management.192.168.49.2.nip.io
+  - host: rabbitmq-management.%EXT_IP%.nip.io
     http:
       paths:
       - path: /

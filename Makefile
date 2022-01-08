@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 build-all:
 	mvn clean package
 
@@ -32,9 +34,53 @@ local-keycloak:
 		-e KEYCLOAK_ADMIN_PASSWORD=admin \
 		bitnami/keycloak:15.0.2-debian-10-r72
 
-k8s-rabbitmq:
+minikube:
+	minikube start && minikube addons enable ingress && minikube dashboard
+
+k8s-db: k8s/auth_secret.yml
+	minikube kubectl -- apply -f ${PWD}/k8s/auth_namespace.yml
+	minikube kubectl -- apply -f ${PWD}/k8s/auth_secret.yml
+	minikube kubectl -- apply -f ${PWD}/k8s/postgres.yml
+
+k8s/auth_secret.yml:
+	@read -p "Enter DB password: " db_pwd;\
+   	read -p "Enter Keycloak admin user: " kyc_usr;\
+   	read -p "Enter Keycloak admin password: " kyc_pwd;\
+   	sed -e s/%DB_PWD%/$$(echo $$db_pwd | base64 -)/g\
+   	-e s/%KYC_USR%/$$(echo $$kyc_usr | base64 -)/g\
+   	-e s/%KYC_PWD%/$$(echo $$kyc_pwd | base64 -)/g\
+   	${PWD}/k8s/templates/auth_secret_template.yml > ${PWD}/k8s/auth_secret.yml
+
+remove-k8s-db:
+	minikube kubectl -- -n auth delete -f ${PWD}/k8s/postgres.yml
+	minikube kubectl -- delete -f ${PWD}/k8s/auth_namespace.yml
+
+k8s-keycloak:
+	minikube kubectl -- apply -f ${PWD}/k8s/keycloak.yml
+
+remove-k8s-keycloak:
+	minikube kubectl -- -n auth delete -f ${PWD}/k8s/keycloak.yml
+
+view-k8s-keycloak:
+	@echo "Keycloak:                 http://keycloak.$$(minikube ip).nip.io/auth"
+	@echo "Keycloak Admin Console:   http://keycloak.$$(minikube ip).nip.io/auth/admin"
+	@echo ""
+	@minikube kubectl -- get all -n auth
+
+k8s-rabbitmq: k8s/rabbitmq.yml
 	minikube kubectl -- apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
 	minikube kubectl -- -n rabbitmq-system apply -f ${PWD}/k8s/rabbitmq.yml
+
+k8s/rabbitmq.yml:
+	@read ip port <<< $$(minikube kubectl -- get service -n auth --no-headers | head -n 1 | awk '{split($$5, a, ":"); split(a[2], port, "/"); print $$3,port[1]}');\
+	read -p "Enter realm name: " realm;\
+	read -p "Enter resource server id: " res_srv;\
+    sed -e s/%KEYCLOAK_IP%/$$ip/g\
+    -e s/%KEYCLOAK_PORT%/$$port/g\
+    -e s/%EXT_IP%/$$(minikube ip)/g\
+    -e s/%REALM%/$$realm/g\
+    -e s/%RES_SRV%/$$res_srv/g\
+    ${PWD}/k8s/templates/rabbitmq_template.yml > ${PWD}/k8s/rabbitmq.yml
 
 remove-k8s-rabbitmq:
 	minikube kubectl -- -n rabbitmq-system delete -f ${PWD}/k8s/rabbitmq.yml
@@ -47,40 +93,3 @@ view-k8s-rabbitmq:
 	@echo "Rabbitmq management: http://rabbitmq-management.$$(minikube ip).nip.io"
 	@echo ""
 	@minikube kubectl -- get all -n rabbitmq-system
-
-minikube:
-	minikube start
-	minikube dashboard
-
-k8s-db: k8s/auth_secret.yml
-	minikube kubectl -- apply -f ${PWD}/k8s/auth_namespace.yml
-	minikube kubectl -- apply -f ${PWD}/k8s/auth_secret.yml
-	minikube kubectl -- apply -f ${PWD}/k8s/postgres.yml
-
-k8s/auth_secret.yml:
-	@read -p "Enter DB password: " db_pwd;\
-   	read -p "Enter Keycloak admin password: " kyc_pwd;\
-	echo "apiVersion: v1\n"\
-	"kind: Secret\n"\
-	"metadata:\n"\
-	"  name: auth-secret\n"\
-	"  namespace: auth\n"\
-	"type: Opaque\n"\
-	"data:\n"\
-	"  db.password: $$(echo $$db_pwd | base64 -)\n"\
-	"  kyc.password: $$(echo $$kyc_pwd | base64 -)" > k8s/auth_secret.yml
-
-k8s-keycloak:
-	minikube kubectl -- apply -f ${PWD}/k8s/keycloak.yml
-
-remove-k8s-db:
-	minikube kubectl -- -n auth delete -f ${PWD}/k8s/postgres.yml
-
-remove-k8s-keycloak:
-	minikube kubectl -- -n auth delete -f ${PWD}/k8s/keycloak.yml
-
-view-k8s-keycloak:
-	@echo "Keycloak:                 http://keycloak.$$(minikube ip).nip.io/auth" 
-	@echo "Keycloak Admin Console:   http://keycloak.$$(minikube ip).nip.io/auth/admin" 
-	@echo ""
-	@minikube kubectl -- get all -n auth
