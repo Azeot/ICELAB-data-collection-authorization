@@ -37,33 +37,21 @@ local-keycloak:
 minikube:
 	minikube start && minikube addons enable ingress && minikube dashboard
 
-k8s-db: k8s/auth_secret.yml
+k8s-postgres:
 	minikube kubectl -- apply -f ${PWD}/k8s/auth_namespace.yml
-	minikube kubectl -- apply -f ${PWD}/k8s/auth_secret.yml
 	minikube kubectl -- apply -f ${PWD}/k8s/postgres.yml
 
-k8s/auth_secret.yml:
-	@read -p "Enter DB password: " db_pwd;\
-   	read -p "Enter Keycloak admin user: " kyc_usr;\
-   	read -p "Enter Keycloak admin password: " kyc_pwd;\
-   	sed -e s/%DB_PWD%/$$(echo $$db_pwd | base64 -)/g\
-   	-e s/%KYC_USR%/$$(echo $$kyc_usr | base64 -)/g\
-   	-e s/%KYC_PWD%/$$(echo $$kyc_pwd | base64 -)/g\
-   	${PWD}/k8s/templates/auth_secret_template.yml > ${PWD}/k8s/auth_secret.yml
-
-remove-k8s-db:
-	minikube kubectl -- -n auth delete -f ${PWD}/k8s/postgres.yml
-	minikube kubectl -- delete -f ${PWD}/k8s/auth_namespace.yml
-
-k8s-keycloak:
+k8s-keycloak: k8s/keycloak_secret.yml
+	minikube kubectl -- apply -f ${PWD}/k8s/keycloak_secret.yml
 	minikube kubectl -- apply -f ${PWD}/k8s/keycloak.yml
 
-remove-k8s-keycloak:
-	minikube kubectl -- -n auth delete -f ${PWD}/k8s/keycloak.yml
+k8s/keycloak_secret.yml:
+	@read -p "Enter Keycloak admin password: " password;\
+   	sed -e s/%PWD%/$$(echo -n $$password | base64 -)/g\
+   	${PWD}/k8s/templates/keycloak_secret_template.yml > ${PWD}/k8s/keycloak_secret.yml
 
 view-k8s-keycloak:
 	@echo "Keycloak:                 http://keycloak.$$(minikube ip).nip.io/auth"
-	@echo "Keycloak Admin Console:   http://keycloak.$$(minikube ip).nip.io/auth/admin"
 	@echo ""
 	@minikube kubectl -- get all -n auth
 
@@ -81,10 +69,6 @@ k8s/rabbitmq.yml:
     -e s/%REALM%/$$realm/g\
     -e s/%RES_SRV%/$$res_srv/g\
     ${PWD}/k8s/templates/rabbitmq_template.yml > ${PWD}/k8s/rabbitmq.yml
-
-remove-k8s-rabbitmq:
-	minikube kubectl -- -n rabbitmq-system delete -f ${PWD}/k8s/rabbitmq.yml
-	minikube kubectl -- delete -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
 
 view-k8s-rabbitmq:
 	@echo "Username: $$(minikube kubectl -- -n rabbitmq-system get secret icerabbitmq-default-user -o jsonpath="{.data.username}" | base64 --decode)"

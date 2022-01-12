@@ -1,23 +1,22 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: keycloak
+  name: keycloak-service
   namespace: auth
   labels:
     app: keycloak
 spec:
-  ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
   selector:
     app: keycloak
-  type: LoadBalancer
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: "http"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: keycloak
+  name: keycloak-deployment
   namespace: auth
   labels:
     app: keycloak
@@ -32,32 +31,35 @@ spec:
         app: keycloak
     spec:
       containers:
-      - name: keycloak
-        image: quay.io/keycloak/keycloak:16.1.0
-        env:
-        - name: DB_ADDR
-          value: postgres-keycloak
-        - name: DB_DATABASE
-          value: "keycloak"
-        - name: DB_PASSWORD
-          value: "password"
-        - name: DB_USER
-          value: "keycloak"
-        - name: DB_VENDOR
-          value: POSTGRES
-        - name: KEYCLOAK_USER
-          value: "admin"
-        - name: KEYCLOAK_PASSWORD
-          value: "admin"
-        - name: PROXY_ADDRESS_FORWARDING
-          value: "true"
-        ports:
-        - name: http
-          containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /auth/realms/master
-            port: 8080
+        - name: keycloak-container
+          image: quay.io/keycloak/keycloak:16.1.0
+          env:
+            - name: KEYCLOAK_USER
+              value: "admin"
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-secret
+                  key: password
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"
+            - name: DB_VENDOR
+              value: "postgres"
+            - name: DB_ADDR
+              value: postgres-service
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 8080
+              name: "http"
+            - containerPort: 8443
+              name: "https"
+          readinessProbe:
+            httpGet:
+              path: /auth/realms/master
+              port: 8080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -66,13 +68,13 @@ metadata:
   namespace: auth
 spec:
   rules:
-  - host: keycloak.192.168.49.2.nip.io
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: keycloak
-            port:
-              number: 8080
+    - host: keycloak.192.168.49.2.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak-service
+                port:
+                  number: 8080
