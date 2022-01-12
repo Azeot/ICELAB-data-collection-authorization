@@ -24,7 +24,7 @@ public class RabbitmqListener {
             final var connection = connectionFactory.newConnection();
             final var channel = connection.createChannel();
             channel.exchangeDeclare(exchange, "fanout");
-            final var queue = channel.queueDeclare().getQueue();
+            final var queue = channel.queueDeclare("cmd_queue", true, false, false, null).getQueue();
             channel.queueBind(queue, exchange, "");
             logger.info("Waiting for messages. To exit press CTRL+C");
             channel.basicConsume(queue,
