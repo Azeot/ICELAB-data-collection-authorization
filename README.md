@@ -51,18 +51,152 @@ RabbitMQ verifica il time to live del token per determinare se esso sia scaduto,
 
 ### Cosa fa
 
-- __Graal__: Applicativo Java che fa le veci del OPC UA Client. Si autentica su RabbitMQ usando delle credenziali utente. Dichiara un exchange con nome e ci fa il bind di una coda. Rimane in ascolto sulla coda per l'arrivo di eventuali messaggi, che riporta su stdout.
-- __Whitebunny__: Applicativo Java che fa le veci del Automation Controller. Contatta Keycloak per ottenere un access token, che usa per stabilire una connessione all'exchange creato da Graal e pubblicarci un messaggio.
+- __Graal__: Applicativo Java di test che fa le veci del OPC UA Client. Si autentica su RabbitMQ usando delle credenziali utente. Dichiara un exchange con nome e ci fa il bind di una coda. Rimane in ascolto sulla coda per l'arrivo di eventuali messaggi, che riporta su stdout.
+- __Whitebunny__: Applicativo Java di test che fa le veci del Automation Controller. Contatta Keycloak per ottenere un access token, che usa per stabilire una connessione all'exchange creato da Graal e pubblicarci un messaggio.
 - __RabbitMQ__: Quando riceve una richiesta di connessione, prima prova a verificare la presenza di un access token nel campo password; come fallback, tenta di eseguire l'autenticazione con credenziali utente. Se riconosce un access token, contatta Keycloak per ottenere il JWK set e verificarlo.
 - __Keycloak__: Stacca access token a Whitebunny ed espone un endpoint per il recupero del JWK set.
 
-## Utilizzo
+## Utilizzo su K8s
+
+Sono richiesti [Git](https://git-scm.com/), [GNU Make](https://www.gnu.org/software/make/), [Maven](https://maven.apache.org/), [Docker](https://www.docker.com/), [Minikube](https://minikube.sigs.k8s.io/) e Java 11.
+
+Dopo aver clonato il progetto, da terminale portarsi nella cartella contenente il Makefile e digitare i comandi:
+
+```shell
+make minikube
+```
+
+Una volta che si sarà aperta nel browser la dashboard di Minikube, in un'altra shell o tab aperta nella stessa cartella digitare:
+
+```shell
+make k8s-postgres
+make k8s-keycloak
+```
+
+Il secondo comando richiederà di inserire la password dell'account di amministrazione di Keycloak, usato per accedere alla pannello di controllo.
+
+A questo punto è possibile connettersi al pannelo di controllo di Keycloak all'url `http://keycloak.<minikubeIp>.nip.io/auth`. Per vedere l'url completo, digitare:
+
+```shell
+make view-k8s-keycloak
+```
+
+Per la configurazione di Keycloak, seguire [l'apposita sezione](###-Configurazione-di-Keycloak).
+
+Digitare:
+
+```shell
+make k8s-rabbitmq
+```
+
+Verrà richiesto di inserire il nome del realm ed il resource server id scelti duranti la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](###-Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
+
+```shell
+kubectl exec -n rabbitmq-system -it icerabbitmq-server-0 --  /bin/bash 
+```
+
+Infine, vanno configurati i due applicativi di test in Java.
+
+Creare un file `.idca.properties` nella `HOME` dell'utente. In questo file, vanno riportate le seguenti properties in formato chiave = valore:
+
+```plain
+rabbitmq.host
+rabbitmq.port
+rabbitmq.vhost
+rabbitmq.exchange
+rabbitmq.user
+rabbitmq.password
+auth.realm
+auth.client.id
+auth.client.secret
+auth.host
+auth.port
+```
+
+Dove `rabbitmq.user` e `rabbitmq.password` sono le credenziali dell'utente creato nel passo precedente che ha accesso al vhost, non dell'utente amministrativo.
+
+Per vedere quali sono gli indirizzi e le porte dei due servizi, `keycloak-service` e `icerabbitmq`, digitare:
+
+```shell
+make make view-k8s-keycloak 
+make make view-k8s-rabbitmq 
+```
+
+Per entrambi, l'indirizzo ip è quello di Minikube, mentre le porte sono quelle che forwardano rispettivamente sulle porte interne 8080 e 5672. Quindi ad esempio:
+
+```plain
+$ make view-k8s-keycloak
+Keycloak:                 http://keycloak.192.168.49.2.nip.io/auth
+
+NAME                                       READY   STATUS    RESTARTS   AGE
+pod/keycloak-deployment-6f55ffc57f-sps9g   1/1     Running   0          57m
+pod/postgres-deployment-7c9947cbcd-sb958   1/1     Running   0          66m
+
+NAME                       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+service/keycloak-service   NodePort    10.99.1.252      <none>        8080:30946/TCP   57m
+service/postgres-service   ClusterIP   10.109.204.109   <none>        5432/TCP         66m
+
+NAME                                  READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/keycloak-deployment   1/1     1            1           57m
+deployment.apps/postgres-deployment   1/1     1            1           66m
+
+NAME                                             DESIRED   CURRENT   READY   AGE
+replicaset.apps/keycloak-deployment-6f55ffc57f   1         1         1       57m
+replicaset.apps/postgres-deployment-7c9947cbcd   1         1         1       66m
+```
+
+Le properties sono `auth.host = 192.168.49.2` e `auth.port = 30946`.
+
+```plain
+$ make view-k8s-rabbitmq 
+Username: default_user_VvlnjfMjHhMcJ9VuDx5
+Password: TIYXagPmOWBNcY9f6XOO8PN06NxvQWNM
+Rabbitmq: http://192.168.49.2:31725
+Rabbitmq management: http://rabbitmq-management.192.168.49.2.nip.io
+
+NAME                                             READY   STATUS    RESTARTS   AGE
+pod/icerabbitmq-server-0                         1/1     Running   0          54m
+pod/rabbitmq-cluster-operator-7cbf865f89-n56mq   1/1     Running   0          54m
+
+NAME                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                          AGE
+service/icerabbitmq         NodePort    10.103.56.9   <none>        5672:31725/TCP,15672:30114/TCP,15692:31234/TCP   54m
+service/icerabbitmq-nodes   ClusterIP   None          <none>        4369/TCP,25672/TCP                               54m
+
+NAME                                        READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/rabbitmq-cluster-operator   1/1     1            1           54m
+
+NAME                                                   DESIRED   CURRENT   READY   AGE
+replicaset.apps/rabbitmq-cluster-operator-7cbf865f89   1         1         1       54m
+
+NAME                                  READY   AGE
+statefulset.apps/icerabbitmq-server   1/1     54m
+
+NAME                                       ALLREPLICASREADY   RECONCILESUCCESS   AGE
+rabbitmqcluster.rabbitmq.com/icerabbitmq   True               True               54m
+```
+
+Le properties sono `rabbitmq.host = 192.168.49.2` e `rabbitmq.port = 31725`.
+
+Poi digitare:
+
+```shell
+make build-all
+java -jar graal/target/graal-1.0-SNAPSHOT.jar
+```
+
+In un'altra shell aperta nella stessa cartella:
+
+```shell
+java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <message>
+```
+
+Il messaggio inviato sarà visibile nello stdout dove `graal` è in ascolto.
+
+## Utilizzo in locale
 
 Sono richiesti [Git](https://git-scm.com/), [GNU Make](https://www.gnu.org/software/make/), [Maven](https://maven.apache.org/), [Docker](https://www.docker.com/) e Java 11.
 
-Dopo aver clonato il progetto, deve essere creato l'ambiente di test locale.
-
-Da terminale, portarsi nella cartella contenente il Makefile e digitare i comandi:
+Dopo aver clonato il progetto, da terminale portarsi nella cartella contenente il Makefile e digitare i comandi:
 
 ```shell
 make local-db
@@ -70,7 +204,7 @@ make local-keycloak
 make local-rabbitmq
 ```
 
-Se è il primo setup, bisogna configurare il [container Keycloak](###Configurazione-di-Keycloak) ed il [container RabbitMQ](###Configurazione-di-RabbitMQ).
+Se è il primo setup, bisogna configurare il [container Keycloak](###-Configurazione-di-Keycloak) ed il [container RabbitMQ](###-Configurazione-di-RabbitMQ).
 
 Poi digitare:
 
