@@ -3,7 +3,7 @@ SHELL := /bin/bash
 build-all:
 	mvn clean package
 
-local-rabbitmq:
+local-rabbitmq: local/rabbitmq-conf/advanced.config
 	docker run -it --rm \
 		--name rabbitmq-dev \
 		--hostname rabbitmq-dev \
@@ -12,6 +12,13 @@ local-rabbitmq:
 		-v ${PWD}/local/rabbitmq-conf:/etc/rabbitmq/:ro \
 		-v ${PWD}/local/rabbitmq:/var/lib/rabbitmq \
 		rabbitmq:3.9-management
+
+local/rabbitmq-conf/advanced.config:
+	@read -p "Enter realm name: " realm;\
+	read -p "Enter resource server id: " res_srv;\
+	sed -e s/%REALM%/$$realm/g\
+    -e s/%RES_SRV%/$$res_srv/g\
+    ${PWD}/local/rabbitmq-conf/templates/advanced_template.config > ${PWD}/local/rabbitmq-conf/advanced.config
 
 local-db:
 	docker run -it --rm \

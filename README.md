@@ -204,6 +204,8 @@ make local-keycloak
 make local-rabbitmq
 ```
 
+Verrà richiesto di inserire il nome del realm ed il nome del resource server id, arbitrari, che saranno usati anche in passi successivi.
+
 Se è il primo setup, bisogna configurare il [container Keycloak](#Configurazione-di-Keycloak) ed il [container RabbitMQ](#Configurazione-di-RabbitMQ).
 
 Creare un file `.idca.properties` nella `HOME` dell'utente. In questo file, vanno riportate le seguenti properties in formato chiave = valore:
@@ -218,7 +220,7 @@ auth.client.id
 auth.client.secret
 ```
 
-I valori sono quelli definiti in precedenza durante la configurazione di Keycloak e Rabbitmq.
+I valori sono quelli definiti in precedenza e durante la configurazione di Keycloak e Rabbitmq.
 
 Poi digitare:
 
@@ -248,7 +250,7 @@ Nella tab "Client Scopes", creare due nuovi scope:
 <resource_server_id>.write:<vhost>/<exchange>
 ```
 
-Dove `resource_server_id`, `vhost` ed `exchange` sono identificativi arbitrari.
+Dove `resource_server_id` è l'identificativo scelto in precedenza, `vhost` ed `exchange` sono identificativi arbitrari.
 
 ![Scope configuration](doc/images/scope_config.png "Scope configuration")
 

@@ -5,3 +5,4 @@ local/rabbitmq/
 
 **/*secret.yml
 rabbitmq.yml
+advanced.config
