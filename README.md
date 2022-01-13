@@ -89,7 +89,7 @@ Digitare:
 make k8s-rabbitmq
 ```
 
-Verrà richiesto di inserire il nome del realm ed il resource server id scelti duranti la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](#Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
+Verrà richiesto di inserire il nome del realm ed il resource server id scelti durante la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](#Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
 
 ```shell
 kubectl exec -n rabbitmq-system -it icerabbitmq-server-0 --  /bin/bash 
@@ -113,7 +113,7 @@ auth.host
 auth.port
 ```
 
-Dove `rabbitmq.user` e `rabbitmq.password` sono le credenziali dell'utente creato nel passo precedente che ha accesso al vhost, non dell'utente amministrativo.
+Dove `rabbitmq.user` e `rabbitmq.password` sono le credenziali dell'utente creato in precedenza che ha accesso al vhost, non dell'utente amministrativo.
 
 Per vedere quali sono gli indirizzi e le porte dei due servizi, `keycloak-service` e `icerabbitmq`, digitare:
 
@@ -206,39 +206,53 @@ make local-rabbitmq
 
 Se è il primo setup, bisogna configurare il [container Keycloak](#Configurazione-di-Keycloak) ed il [container RabbitMQ](#Configurazione-di-RabbitMQ).
 
+Creare un file `.idca.properties` nella `HOME` dell'utente. In questo file, vanno riportate le seguenti properties in formato chiave = valore:
+
+```plain
+rabbitmq.vhost
+rabbitmq.exchange
+rabbitmq.user
+rabbitmq.password
+auth.realm
+auth.client.id
+auth.client.secret
+```
+
+I valori sono quelli definiti in precedenza durante la configurazione di Keycloak e Rabbitmq.
+
 Poi digitare:
 
 ```shell
 make build-all
-java -jar graal/target/graal-1.0-SNAPSHOT.jar <username> <password>
+java -jar graal/target/graal-1.0-SNAPSHOT.jar
 ```
-
-Dove `<username>` e `<password>` sono le credenziali per il client consumer.
 
 Poi in un'altra shell aperta sulla stessa cartella:
 
 ```shell
-java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <clientSecret> [<message>]
+java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <clientSecret> <message>
 ```
 
-Dove `<clientSecret>` è il secret del client publisher, e `<message>` è un argomento opzionale per specificare il testo del messaggio.
+Dove `<message>` è un argomento opzionale per specificare il testo del messaggio.
 
 ## Configurazione di Keycloak
 
 La seguente configurazione di Keycloak va eseguita solamente la prima volta. Viene automaticamente persistita e riutilizzata in successivi restart dei container docker.
 
-Tramite browser collegarsi al backoffice amministrativo di Keycloak su `http://172.17.0.1:8081/` e creare un nuovo realm di nome `dc`. Le credenziali di default per accedere al backoffice sono rispettivamente `admin`, `admin`.
+Tramite browser collegarsi al backoffice amministrativo di Keycloak su `http://172.17.0.1:8081/` e creare un nuovo realm. Le credenziali di default per accedere al backoffice sono rispettivamente `admin`, `admin`.
 
 Nella tab "Client Scopes", creare due nuovi scope:
 
 ```text
-arthur.configure:rpcmsg/opcua
-arthur.write:rpcmsg/opcua
+<resource_server_id>.configure:<vhost>/<exchange>
+<resource_server_id>.write:<vhost>/<exchange>
 ```
+
+Dove `resource_server_id`, `vhost` ed `exchange` sono identificativi arbitrari.
 
 ![Scope configuration](doc/images/scope_config.png "Scope configuration")
 
-Per ognuno, sotto la inner tab "Mappers", creare un nuovo mapper con le proprietà "name" `audience`, "mapper type" `Audience` e "Include Custom Audience" `arthur`.
+Per ognuno, sotto la inner tab "Mappers", creare un nuovo mapper con le proprietà "name" `audience`, "mapper type" `Audience` e "Include Custom Audience" con il resource server id scelto.
 
 Nella tab "Clients", creare un nuovo client con la seguente configurazione:
 
@@ -263,10 +277,10 @@ docker exec -it rabbitmq-dev /bin/bash
 Seguito da:
 
 ```shell
-rabbitmqctl add_vhost "rpcmsg"
+rabbitmqctl add_vhost <vhost>
 rabbitmqctl add_user <username> <password>
-rabbitmqctl set_permissions -p "rpcmsg" <username> ".*" ".*" ".*"
+rabbitmqctl set_permissions -p <vhost> <username> ".*" ".*" ".*"
 exit
 ```
 
-Dove `<username>` e `<password>` sono le credenziali per il client consumer.
+Dove `vhost` è il nome del virtual host usato in precedenza, `username` e `password` sono le credenziali per il client consumer.
