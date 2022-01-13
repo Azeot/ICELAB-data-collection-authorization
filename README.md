@@ -58,7 +58,7 @@ RabbitMQ verifica il time to live del token per determinare se esso sia scaduto,
 
 ## Utilizzo su K8s
 
-Sono richiesti [Git](https://git-scm.com/), [GNU Make](https://www.gnu.org/software/make/), [Maven](https://maven.apache.org/), [Docker](https://www.docker.com/), [Minikube](https://minikube.sigs.k8s.io/) e Java 11.
+Sono richiesti [Git](https://git-scm.com/), [GNU Make](https://www.gnu.org/software/make/), [Maven](https://maven.apache.org/), [Docker](https://www.docker.com/), [Minikube v1.24.0](https://minikube.sigs.k8s.io/) e Java 11.
 
 Dopo aver clonato il progetto, da terminale portarsi nella cartella contenente il Makefile e digitare i comandi:
 
