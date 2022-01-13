@@ -81,7 +81,7 @@ A questo punto è possibile connettersi al pannelo di controllo di Keycloak all'
 make view-k8s-keycloak
 ```
 
-Per la configurazione di Keycloak, seguire [l'apposita sezione](###-Configurazione-di-Keycloak).
+Per la configurazione di Keycloak, seguire [l'apposita sezione](#-Configurazione-di-Keycloak).
 
 Digitare:
 
@@ -89,7 +89,7 @@ Digitare:
 make k8s-rabbitmq
 ```
 
-Verrà richiesto di inserire il nome del realm ed il resource server id scelti duranti la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](###-Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
+Verrà richiesto di inserire il nome del realm ed il resource server id scelti duranti la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](#-Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
 
 ```shell
 kubectl exec -n rabbitmq-system -it icerabbitmq-server-0 --  /bin/bash 
@@ -204,7 +204,7 @@ make local-keycloak
 make local-rabbitmq
 ```
 
-Se è il primo setup, bisogna configurare il [container Keycloak](###-Configurazione-di-Keycloak) ed il [container RabbitMQ](###-Configurazione-di-RabbitMQ).
+Se è il primo setup, bisogna configurare il [container Keycloak](#-Configurazione-di-Keycloak) ed il [container RabbitMQ](#-Configurazione-di-RabbitMQ).
 
 Poi digitare:
 
@@ -223,7 +223,7 @@ java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <clientSecret> [<message
 
 Dove `<clientSecret>` è il secret del client publisher, e `<message>` è un argomento opzionale per specificare il testo del messaggio.
 
-### Configurazione di Keycloak
+## Configurazione di Keycloak
 
 La seguente configurazione di Keycloak va eseguita solamente la prima volta. Viene automaticamente persistita e riutilizzata in successivi restart dei container docker.
 
@@ -250,7 +250,7 @@ Nella inner tab "Client Scopes", aggiungere agli "Assigned Default Client Scopes
 
 Infine, nell'inner tab "Credentials" è riportato il secret per ottenere un access token per il client publisher.
 
-### Configurazione di RabbitMQ
+## Configurazione di RabbitMQ
 
 Anche la seguente configurazione di RabbitMQ va eseguita solamente la prima volta.
 
