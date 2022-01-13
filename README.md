@@ -81,7 +81,7 @@ A questo punto è possibile connettersi al pannelo di controllo di Keycloak all'
 make view-k8s-keycloak
 ```
 
-Per la configurazione di Keycloak, seguire [l'apposita sezione](#-Configurazione-di-Keycloak).
+Per la configurazione di Keycloak, seguire [l'apposita sezione](#Configurazione-di-Keycloak).
 
 Digitare:
 
@@ -89,7 +89,7 @@ Digitare:
 make k8s-rabbitmq
 ```
 
-Verrà richiesto di inserire il nome del realm ed il resource server id scelti duranti la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](#-Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
+Verrà richiesto di inserire il nome del realm ed il resource server id scelti duranti la configurazione di Keycloak. Per la configurazione di Rabbitmq, seguire [la sezione dedicata](#Configurazione-di-RabbitMQ), con l'eccezione che bisogna accedere al pod anzichè al container docker. Per farlo, digitare:
 
 ```shell
 kubectl exec -n rabbitmq-system -it icerabbitmq-server-0 --  /bin/bash 
@@ -204,7 +204,7 @@ make local-keycloak
 make local-rabbitmq
 ```
 
-Se è il primo setup, bisogna configurare il [container Keycloak](#-Configurazione-di-Keycloak) ed il [container RabbitMQ](#-Configurazione-di-RabbitMQ).
+Se è il primo setup, bisogna configurare il [container Keycloak](#Configurazione-di-Keycloak) ed il [container RabbitMQ](#Configurazione-di-RabbitMQ).
 
 Poi digitare:
 
