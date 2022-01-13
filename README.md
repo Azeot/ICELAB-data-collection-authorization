@@ -1,5 +1,15 @@
 # Authorization in ICE Lab Data Collection Architecture
 
+- [Authorization in ICE Lab Data Collection Architecture](#authorization-in-ice-lab-data-collection-architecture)
+  - [Panoramica](#panoramica)
+    - [OAuth2 in RabbitMQ](#oauth2-in-rabbitmq)
+    - [Parti del sistema di test](#parti-del-sistema-di-test)
+  - [Configurazione e utilizzo](#configurazione-e-utilizzo)
+    - [Utilizzo su K8s](#utilizzo-su-k8s)
+    - [Utilizzo in container locali](#utilizzo-in-container-locali)
+    - [Configurazione di Keycloak](#configurazione-di-keycloak)
+    - [Configurazione di RabbitMQ](#configurazione-di-rabbitmq)
+
 Questo progetto è uno stub esplorativo della configurazione di un sistema di autorizzazione basato su OAuth2 nell'ambito dell'architettura di raccolta dati dell'ICE Lab.
 
 ## Panoramica
@@ -49,14 +59,16 @@ L'API di RabbitMQ non è nativamente pensata con il supporto per OAuth2, pertant
 
 RabbitMQ verifica il time to live del token per determinare se esso sia scaduto, sia al momento di apertura della connessione, _sia al momento della pubblicazione di un messaggio_.
 
-### Cosa fa
+### Parti del sistema di test
 
 - __Graal__: Applicativo Java di test che fa le veci del OPC UA Client. Si autentica su RabbitMQ usando delle credenziali utente. Dichiara un exchange con nome e ci fa il bind di una coda. Rimane in ascolto sulla coda per l'arrivo di eventuali messaggi, che riporta su stdout.
 - __Whitebunny__: Applicativo Java di test che fa le veci del Automation Controller. Contatta Keycloak per ottenere un access token, che usa per stabilire una connessione all'exchange creato da Graal e pubblicarci un messaggio.
 - __RabbitMQ__: Quando riceve una richiesta di connessione, prima prova a verificare la presenza di un access token nel campo password; come fallback, tenta di eseguire l'autenticazione con credenziali utente. Se riconosce un access token, contatta Keycloak per ottenere il JWK set e verificarlo.
 - __Keycloak__: Stacca access token a Whitebunny ed espone un endpoint per il recupero del JWK set.
 
-## Utilizzo su K8s
+## Configurazione e utilizzo
+
+### Utilizzo su K8s
 
 Sono richiesti [Git](https://git-scm.com/), [GNU Make](https://www.gnu.org/software/make/), [Maven](https://maven.apache.org/), [Docker](https://www.docker.com/), [Minikube v1.24.0](https://minikube.sigs.k8s.io/) e Java 11.
 
@@ -192,7 +204,7 @@ java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <message>
 
 Il messaggio inviato sarà visibile nello stdout dove `graal` è in ascolto.
 
-## Utilizzo in locale
+### Utilizzo in container locali
 
 Sono richiesti [Git](https://git-scm.com/), [GNU Make](https://www.gnu.org/software/make/), [Maven](https://maven.apache.org/), [Docker](https://www.docker.com/) e Java 11.
 
@@ -237,7 +249,7 @@ java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <clientSecret> <message>
 
 Dove `<message>` è un argomento opzionale per specificare il testo del messaggio.
 
-## Configurazione di Keycloak
+### Configurazione di Keycloak
 
 La seguente configurazione di Keycloak va eseguita solamente la prima volta. Viene automaticamente persistita e riutilizzata in successivi restart dei container docker.
 
@@ -266,7 +278,7 @@ Nella inner tab "Client Scopes", aggiungere agli "Assigned Default Client Scopes
 
 Infine, nell'inner tab "Credentials" è riportato il secret per ottenere un access token per il client publisher.
 
-## Configurazione di RabbitMQ
+### Configurazione di RabbitMQ
 
 Anche la seguente configurazione di RabbitMQ va eseguita solamente la prima volta.
 
