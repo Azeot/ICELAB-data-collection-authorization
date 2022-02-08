@@ -21,6 +21,7 @@ public class Config {
         factory.setVirtualHost(vhost);
         factory.setUsername("");
         factory.setPort(port);
+        factory.setConnectionTimeout(0);
         return factory;
     }
 

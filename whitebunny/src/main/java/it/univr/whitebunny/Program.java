@@ -17,7 +17,7 @@ public class Program {
         try (final var file = new ClassPathResource("payload.json").getInputStream();
              final var reader = new BufferedReader(new InputStreamReader(file))) {
             final var payload = reader.lines().collect(Collectors.joining());
-            System.out.println(rabbitmqClient.publish(oauthResponse.accessToken, payload));
+            System.out.printf("Response: %s", rabbitmqClient.publish(oauthResponse.accessToken, payload));
         }
     }
 }
