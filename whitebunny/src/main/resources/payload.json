@@ -1,0 +1,9 @@
+{
+  "key": "corr_id",
+  "method": "read",
+  "args": [
+    "Objects/Cell_4_Robot_Coordinator_PLC/DataBlocksGlobal/DB_BUFFER/ABBPositions/0"
+  ],
+  "kwargs": {
+  }
+}

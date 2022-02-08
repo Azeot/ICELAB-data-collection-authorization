@@ -27,8 +27,8 @@ public class Config {
     @Bean
     public RabbitmqClient rabbitmqClient(
             ConnectionFactory connectionFactory,
-            @Value("${rabbitmq.exchange}") String exchange) {
-        return new RabbitmqClient(connectionFactory, exchange);
+            @Value("${rabbitmq.requestQueue}") String requestQueue) {
+        return new RabbitmqClient(connectionFactory, requestQueue);
     }
 
     @Bean

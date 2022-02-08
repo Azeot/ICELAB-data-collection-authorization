@@ -1,22 +1,23 @@
 package it.univr.whitebunny;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.stream.Stream;
-
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.io.ClassPathResource;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
 
 public class Program {
     public static void main(String[] argv) throws IOException {
         final var ctx = new AnnotationConfigApplicationContext(Config.class);
         final var authClient = ctx.getBean(AuthClient.class);
         final var rabbitmqClient = ctx.getBean(RabbitmqClient.class);
-        final var file = Path.of("/Users/azeot/projects/payload");
-        final var payload = Files.readString(file);
-        final var message = Stream.of(argv).findFirst().orElse("Hello world");
         final var oauthResponse = authClient.getOauthResponse();
-        System.out.println(rabbitmqClient.publish(oauthResponse.accessToken, payload));
-        
+        try (final var file = new ClassPathResource("payload.json").getInputStream();
+             final var reader = new BufferedReader(new InputStreamReader(file))) {
+            final var payload = reader.lines().collect(Collectors.joining());
+            System.out.println(rabbitmqClient.publish(oauthResponse.accessToken, payload));
+        }
     }
 }

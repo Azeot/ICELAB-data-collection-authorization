@@ -31,7 +31,7 @@ public class Config {
     @Bean
     public RabbitmqListener rabbitmqListener(
             ConnectionFactory connectionFactory,
-            @Value("${rabbitmq.exchange}") String exchange) {
-        return new RabbitmqListener(connectionFactory, exchange);
+            @Value("${rabbitmq.requestQueue}") String requestQueue) {
+        return new RabbitmqListener(connectionFactory, requestQueue);
     }
 }

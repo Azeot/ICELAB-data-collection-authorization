@@ -26,7 +26,7 @@ spec:
         {rabbitmq_auth_backend_oauth2, [
           {resource_server_id, <<"%RES_SRV%">>},
           {key_config, [
-            {jwks_url, <<"http://%EXT_IP%:%KEYCLOAK_PORT%/auth/realms/%REALM%/protocol/openid-connect/certs">>}
+            {jwks_url, <<"http://keycloak.%EXT_IP%.nip.io/auth/realms/%REALM%/protocol/openid-connect/certs">>}
           ]}
         ]}
       ].
