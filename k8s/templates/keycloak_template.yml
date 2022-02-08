@@ -68,7 +68,7 @@ metadata:
   namespace: auth
 spec:
   rules:
-    - host: keycloak.192.168.49.2.nip.io
+    - host: keycloak.%HOST%.nip.io
       http:
         paths:
           - path: /

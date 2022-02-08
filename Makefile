@@ -52,6 +52,11 @@ k8s-keycloak: k8s/keycloak_secret.yml
 	minikube kubectl -- apply -f ${PWD}/k8s/keycloak_secret.yml
 	minikube kubectl -- apply -f ${PWD}/k8s/keycloak.yml
 
+k8s/keycloak.yml:
+	@read -p "Enter keycloak host: " host;\
+	sed -e s/%HOST%/$$host/g\
+	 ${PWD}/k8s/templates/keycloak_template.yml > ${PWD}/k8s/keycloak.yml
+
 k8s/keycloak_secret.yml:
 	@read -p "Enter Keycloak admin password: " password;\
    	sed -e s/%PWD%/$$(echo -n $$password | base64 -)/g\
@@ -67,12 +72,11 @@ k8s-rabbitmq: k8s/rabbitmq.yml
 	minikube kubectl -- -n rabbitmq-system apply -f ${PWD}/k8s/rabbitmq.yml
 
 k8s/rabbitmq.yml:
-	@read ip port <<< $$(minikube kubectl -- get service -n auth --no-headers | head -n 1 | awk '{split($$5, a, ":"); split(a[2], port, "/"); print $$3,port[1]}');\
+	@read -p "Enter rabbitmq host: " host;\
 	read -p "Enter realm name: " realm;\
 	read -p "Enter resource server id: " res_srv;\
     sed -e s/%KEYCLOAK_IP%/$$ip/g\
-    -e s/%KEYCLOAK_PORT%/$$port/g\
-    -e s/%EXT_IP%/$$(minikube ip)/g\
+    -e s/%HOST%/$$host/g\
     -e s/%REALM%/$$realm/g\
     -e s/%RES_SRV%/$$res_srv/g\
     ${PWD}/k8s/templates/rabbitmq_template.yml > ${PWD}/k8s/rabbitmq.yml
@@ -84,3 +88,8 @@ view-k8s-rabbitmq:
 	@echo "Rabbitmq management: http://rabbitmq-management.$$(minikube ip).nip.io"
 	@echo ""
 	@minikube kubectl -- get all -n rabbitmq-system
+
+remove-files:
+	rm k8s/keycloak_secret.yml k8s/keycloak.yml k8s/rabbitmq.yml
+
+create-files: k8s/keycloak_secret.yml k8s/keycloak.yml k8s/rabbitmq.yml

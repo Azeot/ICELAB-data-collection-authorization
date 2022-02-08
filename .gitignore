@@ -5,4 +5,5 @@ local/rabbitmq/
 
 **/*secret.yml
 rabbitmq.yml
+keycloak.yml
 advanced.config
