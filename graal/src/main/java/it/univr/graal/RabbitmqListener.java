@@ -31,7 +31,7 @@ public class RabbitmqListener {
 
             channel.basicQos(1);
 
-            logger.info(" [x] Awaiting RPC requests");
+            logger.info("Awaiting RPC requests");
 
             Object monitor = new Object();
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {

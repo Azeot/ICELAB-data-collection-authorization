@@ -134,7 +134,7 @@ make make view-k8s-keycloak
 make make view-k8s-rabbitmq 
 ```
 
-Per entrambi, l'indirizzo ip è quello di Minikube, mentre le porte sono quelle che forwardano rispettivamente sulle porte interne 8080 e 5672. Quindi ad esempio:
+Quindi ad esempio:
 
 ```plain
 $ make view-k8s-keycloak
@@ -157,7 +157,7 @@ replicaset.apps/keycloak-deployment-6f55ffc57f   1         1         1       57m
 replicaset.apps/postgres-deployment-7c9947cbcd   1         1         1       66m
 ```
 
-Le properties sono `auth.host = 192.168.49.2` e `auth.port = 30946`.
+Le properties sono `auth.host = keycloak.192.168.49.2.nip.io` e `auth.port = 80`, che sono indirizzo e porta con cui Ingress permette di raggiungere dall'esterno il servizio di Keycloak.
 
 ```plain
 $ make view-k8s-rabbitmq 
@@ -244,10 +244,8 @@ java -jar graal/target/graal-1.0-SNAPSHOT.jar
 Poi in un'altra shell aperta sulla stessa cartella:
 
 ```shell
-java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar <clientSecret> <message>
+java -jar whitebunny/target/whitebunny-1.0-SNAPSHOT.jar 
 ```
-
-Dove `<message>` è un argomento opzionale per specificare il testo del messaggio.
 
 ### Configurazione di Keycloak
 
@@ -258,8 +256,9 @@ Tramite browser collegarsi al backoffice amministrativo di Keycloak su `http://1
 Nella tab "Client Scopes", creare due nuovi scope:
 
 ```text
-<resource_server_id>.configure:<vhost>/<exchange>
-<resource_server_id>.write:<vhost>/<exchange>
+<resource_server_id>.configure:<vhost>/*
+<resource_server_id>.write:<vhost>/*
+<resource_server_id>.read:<vhost>/*
 ```
 
 Dove `resource_server_id` è l'identificativo scelto in precedenza, `vhost` ed `exchange` sono identificativi arbitrari.

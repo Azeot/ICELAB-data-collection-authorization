@@ -31,7 +31,7 @@ public class RabbitmqClient {
              final var channel = connection.createChannel()) {
             final var corrId = UUID.randomUUID().toString();
             final var msg = payload.replaceAll("corr_id", corrId);
-            logger.trace(msg);
+            logger.trace("payload: {}", msg);
 
             final var replyQueueName = channel.queueDeclare().getQueue();
             final var props = new AMQP.BasicProperties
