@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Falanga
+    given-names: Enrico
+    orcid:
+title: ICE Lab Data Collection Authorization 
+version: v1.0.0
+date-released: 2022-03-07
