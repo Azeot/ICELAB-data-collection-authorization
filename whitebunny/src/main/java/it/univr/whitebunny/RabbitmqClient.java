@@ -39,9 +39,11 @@ public class RabbitmqClient {
                     .correlationId(corrId)
                     .replyTo(replyQueueName)
                     .build();
+            logger.info("Publishing message");
             channel.basicPublish("", requestQueue, props, msg.getBytes(StandardCharsets.UTF_8));
+            
             final BlockingQueue<String> response = new ArrayBlockingQueue<>(1);
-
+            logger.info("Waiting for response on callback queue {}", replyQueueName);
             final var ctag = channel.basicConsume(replyQueueName, true, (consumerTag, delivery) -> {
                 if (delivery.getProperties().getCorrelationId().equals(corrId)) {
                     response.offer(new String(delivery.getBody(), StandardCharsets.UTF_8));
